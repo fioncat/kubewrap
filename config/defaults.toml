@@ -1,0 +1,10 @@
+cmd = "kw"
+
+[kubectl]
+name = "kubectl"
+args = []
+
+[nodeshell]
+namespace = "kube-system"
+image = "alpine:latest"
+shell = ["bash"]
