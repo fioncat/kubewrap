@@ -8,7 +8,9 @@ import (
 	"github.com/fioncat/kubewrap/cmd/exec"
 	initcmd "github.com/fioncat/kubewrap/cmd/init"
 	"github.com/fioncat/kubewrap/cmd/login"
+	"github.com/fioncat/kubewrap/pkg/fzf"
 	"github.com/spf13/cobra"
+	"google.golang.org/genproto/googleapis/ads/googleads/v1/errors"
 )
 
 var (
@@ -63,6 +65,9 @@ func main() {
 
 	err := c.Execute()
 	if err != nil {
+		if errors.Is(err, fzf.ErrCanceled) {
+			os.Exit(fzf.ExitCodeCanceled)
+		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

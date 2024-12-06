@@ -1,5 +1,7 @@
 cmd = "kw"
 
+editor = "$EDITOR"
+
 source_file_path = "$HOME/.kube/.source_file"
 
 [kubectl]

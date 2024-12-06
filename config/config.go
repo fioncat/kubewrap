@@ -18,6 +18,8 @@ const (
 type Config struct {
 	Command string `json:"cmd" toml:"cmd"`
 
+	Editor string `json:"editor" toml:"editor"`
+
 	SourceFilePath string `json:"source_file_path" toml:"source_file_path"`
 
 	Kubectl    Kubectl    `json:"kubectl" toml:"kubectl"`
@@ -102,6 +104,14 @@ func Load(path string, useDefault bool) (*Config, error) {
 func (c *Config) normalize() error {
 	if len(c.Command) == 0 {
 		c.Command = defaults.Command
+	}
+
+	if len(c.Editor) == 0 {
+		c.Editor = defaults.Editor
+	}
+	c.Editor = os.ExpandEnv(c.Editor)
+	if c.Editor == "" {
+		c.Editor = "vim"
 	}
 
 	if len(c.SourceFilePath) == 0 {
