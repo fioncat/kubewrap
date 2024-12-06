@@ -5,6 +5,7 @@ go 1.23.4
 require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/fatih/color v1.18.0
+	github.com/icza/backscanner v0.0.0-20241124160932-dff01ac50250
 	github.com/spf13/cobra v1.8.1
 )
 

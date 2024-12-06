@@ -1,5 +1,7 @@
 cmd = "kw"
 
+source_file_path = "$HOME/.kube/.source_file"
+
 [kubectl]
 name = "kubectl"
 args = []
@@ -8,3 +10,10 @@ args = []
 namespace = "kube-system"
 image = "alpine:latest"
 shell = ["bash"]
+
+[kubeconfig]
+root = "$HOME/.kube/config"
+
+[history]
+path = "$HOME/.kube/.history"
+max = 100
