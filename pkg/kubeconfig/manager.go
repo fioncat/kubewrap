@@ -87,7 +87,7 @@ func (m *manager) init(alias map[string]string) error {
 	return nil
 }
 
-func (m *manager) Put(name string, data []byte) error {
+func (m *manager) Put(name string, data []byte) (*KubeConfig, error) {
 	config, ok := m.configs[name]
 	if !ok {
 		config = &KubeConfig{
@@ -99,14 +99,14 @@ func (m *manager) Put(name string, data []byte) error {
 	path := config.Path()
 	err := dirs.EnsureCreate(filepath.Dir(path))
 	if err != nil {
-		return fmt.Errorf("ensure kubeconfig dir: %w", err)
+		return nil, fmt.Errorf("ensure kubeconfig dir: %w", err)
 	}
 
 	err = os.WriteFile(path, data, 0644)
 	if err != nil {
-		return fmt.Errorf("write kubeconfig file: %w", err)
+		return nil, fmt.Errorf("write kubeconfig file: %w", err)
 	}
-	return nil
+	return config, nil
 }
 
 func (m *manager) Delete(name string) error {

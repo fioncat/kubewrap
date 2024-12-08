@@ -1,5 +1,5 @@
 function {{name}}() {
-  local NEED_SOURCE_CODE=304
+  local NEED_SOURCE_CODE=302
   local DEFAULT_EXECUTABLE_PATH="kubewrap"
   declare -a opts
 
@@ -17,16 +17,14 @@ function {{name}}() {
 
   $executable_path "${opts[@]}"
   local exit_code=$?
-  if [[ $exit_code -eq NEED_SOURCE_CODE ]]; then
-    local source_content=$($executable_path source)
-    if [[ $? -ne 0 ]]; then
-      return 1
-    fi
-    # source <(echo "$source_content")
-    echo "Need source:"
-    echo "$source_content"
-    return 0
+  if [[ $exit_code -ne 0 ]]; then
+    return $exit_code
   fi
+  local source_content=$($executable_path source)
+  if [[ $? -ne 0 ]]; then
+    return 1
+  fi
+  source <(echo "$source_content")
 
-  return $exit_code
+  return
 }

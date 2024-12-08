@@ -2,6 +2,7 @@ package kubeconfig
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -27,7 +28,7 @@ alias k='kubectl'
 `
 
 type Manager interface {
-	Put(name string, data []byte) error
+	Put(name string, data []byte) (*KubeConfig, error)
 	Delete(name string) error
 	DeleteAll() error
 
@@ -60,7 +61,19 @@ func (c *KubeConfig) GenerateSource(ns string) string {
 	return strings.TrimSpace(source)
 }
 
+func (c *KubeConfig) String() string {
+	s := c.Name
+	if c.Alias != "" {
+		s = fmt.Sprintf("%s (alias to %s)", s, c.Alias)
+	}
+	return s
+}
+
 func UnsetSource() string {
 	source := fmt.Sprintf(unsetTemplate, envName, envPath, envNamespace)
 	return strings.TrimSpace(source)
+}
+
+func GetCurrentNamespace() string {
+	return os.Getenv(envNamespace)
 }

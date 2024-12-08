@@ -30,6 +30,9 @@ func NewManager(path string, max int) (Manager, error) {
 func (m *manager) scan(max int) error {
 	file, err := os.Open(m.path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return fmt.Errorf("open history file: %w", err)
 	}
 	defer file.Close()
@@ -96,7 +99,7 @@ func (m *manager) parse(line string) (*Record, bool) {
 		Timestamp: timestamp,
 		Name:      name,
 		Namespace: namespace,
-	}, false
+	}, true
 }
 
 func (m *manager) Add(name, namespace string) {

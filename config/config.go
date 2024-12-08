@@ -26,6 +26,8 @@ type Config struct {
 	NodeShell  NodeShell  `json:"nodeshell" toml:"nodeshell"`
 	KubeConfig KubeConfig `json:"kubeconfig" toml:"kubeconfig"`
 	History    History    `json:"history" toml:"history"`
+
+	NamespaceAlias []NamespaceAlias `json:"namespace_alias" toml:"namespace_alias"`
 }
 
 type Kubectl struct {
@@ -49,6 +51,11 @@ type History struct {
 	Max  int    `json:"max" toml:"max"`
 }
 
+type NamespaceAlias struct {
+	Configs    []string `json:"configs" toml:"configs"`
+	Namespaces []string `json:"namespaces" toml:"namespaces"`
+}
+
 //go:embed defaults.toml
 var defaultsData []byte
 
@@ -62,6 +69,20 @@ var defaults = func() *Config {
 }()
 
 func Load(path string, useDefault bool) (*Config, error) {
+	cfg, err := load(path, useDefault)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cfg.normalize()
+	if err != nil {
+		return nil, fmt.Errorf("normalize: %w", err)
+	}
+
+	return cfg, nil
+}
+
+func load(path string, useDefault bool) (*Config, error) {
 	if useDefault {
 		return defaults, nil
 	}
@@ -92,13 +113,7 @@ func Load(path string, useDefault bool) (*Config, error) {
 		}
 	}
 
-	err := cfg.normalize()
-	if err != nil {
-		return nil, fmt.Errorf("normalize: %w", err)
-	}
-
 	return &cfg, nil
-
 }
 
 func (c *Config) normalize() error {

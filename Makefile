@@ -13,6 +13,10 @@ VERSION:=$(if $(VERSION),$(VERSION),dev-${COMMIT_ID_SHORT})
 build:
 	@bash build.sh
 
+.PHONY: install
+install:
+	@bash build.sh "install"
+
 .PHONY: fmt
 fmt:
 	@find . -name \*.go -exec goimports -w {} \;

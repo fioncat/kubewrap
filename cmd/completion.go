@@ -6,9 +6,36 @@ import (
 	"path/filepath"
 
 	"github.com/fioncat/kubewrap/config"
+	"github.com/fioncat/kubewrap/pkg/kubeconfig"
 	"github.com/fioncat/kubewrap/pkg/kubectl"
 	"github.com/spf13/cobra"
 )
+
+func GetCompleteConfig(c *cobra.Command) *config.Config {
+	configPath := c.Flags().Lookup("config").Value.String()
+	useDefaultConfig := c.Flags().Lookup("default-config").Value.String() == "true"
+	cfg, err := config.Load(configPath, useDefaultConfig)
+	if err != nil {
+		WriteCompleteLogs("Load config failed: %v", err)
+		return nil
+	}
+	return cfg
+}
+
+func GetCompleteKubeconfigManager(c *cobra.Command) kubeconfig.Manager {
+	cfg := GetCompleteConfig(c)
+	if cfg == nil {
+		return nil
+	}
+
+	mgr, err := kubeconfig.NewManager(cfg.KubeConfig.Root, cfg.KubeConfig.Alias)
+	if err != nil {
+		WriteCompleteLogs("Create kubeconfig manager failed: %v", err)
+		return nil
+	}
+
+	return mgr
+}
 
 func getCompleteKubectl(c *cobra.Command) kubectl.Kubectl {
 	printConfig := c.Flags().Lookup("print-config").Value.String() == "true"
@@ -17,11 +44,8 @@ func getCompleteKubectl(c *cobra.Command) kubectl.Kubectl {
 		return nil
 	}
 
-	configPath := c.Flags().Lookup("config").Value.String()
-	useDefaultConfig := c.Flags().Lookup("default-config").Value.String() == "true"
-	cfg, err := config.Load(configPath, useDefaultConfig)
-	if err != nil {
-		WriteCompleteLogs("Load config failed: %v", err)
+	cfg := GetCompleteConfig(c)
+	if cfg == nil {
 		return nil
 	}
 

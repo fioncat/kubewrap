@@ -1,16 +1,20 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/fioncat/kubewrap/cmd/config"
 	"github.com/fioncat/kubewrap/cmd/cp"
 	"github.com/fioncat/kubewrap/cmd/exec"
 	initcmd "github.com/fioncat/kubewrap/cmd/init"
 	"github.com/fioncat/kubewrap/cmd/login"
+	"github.com/fioncat/kubewrap/cmd/ns"
+	"github.com/fioncat/kubewrap/cmd/show"
+	sourcecmd "github.com/fioncat/kubewrap/cmd/source"
 	"github.com/fioncat/kubewrap/pkg/fzf"
 	"github.com/spf13/cobra"
-	"google.golang.org/genproto/googleapis/ads/googleads/v1/errors"
 )
 
 var (
@@ -58,10 +62,14 @@ func newCommand() *cobra.Command {
 func main() {
 	c := newCommand()
 
+	c.AddCommand(config.New())
 	c.AddCommand(cp.New())
 	c.AddCommand(exec.New())
 	c.AddCommand(initcmd.New())
 	c.AddCommand(login.New())
+	c.AddCommand(ns.New())
+	c.AddCommand(show.New())
+	c.AddCommand(sourcecmd.New())
 
 	err := c.Execute()
 	if err != nil {

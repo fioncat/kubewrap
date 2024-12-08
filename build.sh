@@ -36,8 +36,13 @@ EOF
 BUILD_FLAGS="-X main.Version=${BUILD_VERSION} -X main.BuildType=${BUILD_TYPE} -X main.BuildCommit=${GIT_COMMIT} -X main.BuildTime=$(date +%F-%Z/%T)"
 
 echo ""
-echo "Build kubewrap..."
-CGO_ENABLED=0 GOOS="$1" GOARCH="$2" go build -ldflags "${BUILD_FLAGS}" -o ./bin/kubewrap
+if [[ "$1" == "install" ]]; then
+  echo "Install kubewrap..."
+  CGO_ENABLED=0 go install -ldflags "${BUILD_FLAGS}"
+else
+  echo "Build kubewrap..."
+  CGO_ENABLED=0 GOOS="$1" GOARCH="$2" go build -ldflags "${BUILD_FLAGS}" -o ./bin/kubewrap
+fi
 if [[ $? -ne 0 ]]; then
 	echo "Build kubewrap failed"
 	exit 1
