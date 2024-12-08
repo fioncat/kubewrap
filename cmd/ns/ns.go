@@ -92,9 +92,11 @@ func (o *Options) Run(cmdctx *cmd.Context) error {
 	}
 
 	if o.unuse {
-		if kubeconfig.GetCurrentNamespace() == "" {
+		curNs := kubeconfig.GetCurrentNamespace()
+		if curNs == "" {
 			return errors.New("no current namespace used, cannot unuse")
 		}
+		term.PrintHint("Unuse current namespace %q", curNs)
 		return source.Apply(cfg, cur.GenerateSource(""))
 	}
 

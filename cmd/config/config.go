@@ -88,7 +88,7 @@ func (o *Options) Run(cmdctx *cmd.Context) error {
 	case o.delete:
 		return o.handleDelete()
 	case o.deleteAll:
-		return o.configMgr.DeleteAll()
+		return o.handleDeleteAll()
 	case o.list:
 		return o.handleList()
 	case o.listHistory:
@@ -343,4 +343,19 @@ func (o *Options) handleUnuse(cmdctx *cmd.Context) error {
 	term.PrintHint("Unuse current kubeconfig %q", cur.Name)
 	src := kubeconfig.UnsetSource()
 	return source.Apply(cmdctx.Config, src)
+}
+
+func (o *Options) handleDeleteAll() error {
+	_, ok := o.configMgr.Current()
+	if ok {
+		return errors.New("you are now using a kubeconfig, please unuse it first")
+	}
+
+	err := term.Confirm(o.skipConfirm, "Do you want to delete all kubeconfig files")
+	if err != nil {
+		return err
+	}
+
+	term.PrintHint("Delete all kubeconfig files")
+	return o.configMgr.DeleteAll()
 }
