@@ -24,16 +24,16 @@ type Node struct {
 }
 
 type NotFoundError struct {
-	resouceType string
-	name        string
+	resourceType string
+	name         string
 }
 
-func newNotFoundError(resouceType, name string) error {
-	return &NotFoundError{resouceType: resouceType, name: name}
+func newNotFoundError(resourceType, name string) error {
+	return &NotFoundError{resourceType: resourceType, name: name}
 }
 
 func (e *NotFoundError) Error() string {
-	return fmt.Sprintf("cannot find %s %q", e.resouceType, e.name)
+	return fmt.Sprintf("cannot find %s %q", e.resourceType, e.name)
 }
 
 func IsNotFound(err error) bool {

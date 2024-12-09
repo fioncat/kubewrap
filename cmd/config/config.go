@@ -336,16 +336,16 @@ func (o *Options) use(cmdctx *cmd.Context, kc *kubeconfig.KubeConfig) error {
 
 func (o *Options) selectOne() (*kubeconfig.KubeConfig, error) {
 	kcs := o.configMgr.List()
-	filterd := make([]*kubeconfig.KubeConfig, 0, len(kcs))
+	filtered := make([]*kubeconfig.KubeConfig, 0, len(kcs))
 	for _, kc := range kcs {
 		if o.curName != "" && kc.Name == o.curName {
 			continue
 		}
-		filterd = append(filterd, kc)
+		filtered = append(filtered, kc)
 	}
 
-	items := make([]string, 0, len(filterd))
-	for _, kc := range filterd {
+	items := make([]string, 0, len(filtered))
+	for _, kc := range filtered {
 		items = append(items, kc.Name)
 	}
 
@@ -358,7 +358,7 @@ func (o *Options) selectOne() (*kubeconfig.KubeConfig, error) {
 		return nil, err
 	}
 
-	return filterd[idx], nil
+	return filtered[idx], nil
 }
 
 func (o *Options) handleUnuse(cmdctx *cmd.Context) error {
