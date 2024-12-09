@@ -18,6 +18,7 @@ export %s="%s"
 export %s="%s"
 export %s="%s"
 alias k='kubectl%s'
+alias kk='k9s%s'
 `
 
 const unsetTemplate = `
@@ -25,6 +26,7 @@ export %s=""
 export %s=""
 export %s=""
 alias k='kubectl'
+alias kk='k9s'
 `
 
 type Manager interface {
@@ -57,7 +59,7 @@ func (c *KubeConfig) GenerateSource(ns string) string {
 	if len(ns) > 0 {
 		nsSet = fmt.Sprintf(" -n %s", ns)
 	}
-	source := fmt.Sprintf(sourceTemplate, envName, c.Name, envPath, c.Path(), envNamespace, ns, nsSet)
+	source := fmt.Sprintf(sourceTemplate, envName, c.Name, envPath, c.Path(), envNamespace, ns, nsSet, nsSet)
 	return strings.TrimSpace(source)
 }
 

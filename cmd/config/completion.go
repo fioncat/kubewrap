@@ -16,9 +16,18 @@ func CompletionFunc(c *cobra.Command, args []string, toComplete string) ([]strin
 		return nil, cobra.ShellCompDirectiveError
 	}
 
+	var curName string
+	cur, ok := mgr.Current()
+	if ok {
+		curName = cur.Name
+	}
+
 	kcs := mgr.List()
 	items := make([]string, 0, len(kcs))
 	for _, kc := range kcs {
+		if curName != "" && kc.Name == curName {
+			continue
+		}
 		item := kc.Name
 		if kc.Alias != "" {
 			item = fmt.Sprintf("%s\talias to %s", kc.Name, kc.Alias)

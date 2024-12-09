@@ -3,7 +3,9 @@ package ns
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
+	"github.com/fatih/color"
 	"github.com/fioncat/kubewrap/cmd"
 	"github.com/fioncat/kubewrap/config"
 	"github.com/fioncat/kubewrap/pkg/fzf"
@@ -66,12 +68,16 @@ func (o *Options) Run(cmdctx *cmd.Context) error {
 	}
 
 	if o.list {
+		curNs := kubeconfig.GetCurrentNamespace()
 		var nsList []string
-		nsList, err = listNamespaces(cmdctx.Config, cmdctx.Kubectl, cur.Name)
+		nsList, err = listNamespacesRaw(cmdctx.Config, cmdctx.Kubectl, cur.Name)
 		if err != nil {
 			return err
 		}
 		for _, ns := range nsList {
+			if curNs != "" && curNs == ns {
+				ns = color.New(color.Bold).Sprintf("* %s", ns)
+			}
 			fmt.Println(ns)
 		}
 		return nil
@@ -160,6 +166,15 @@ func listNamespaces(cfg *config.Config, kubectl kubectl.Kubectl, curName string)
 
 func listNamespacesRaw(cfg *config.Config, kubectl kubectl.Kubectl, curName string) ([]string, error) {
 	for _, nsAlias := range cfg.NamespaceAlias {
+		for _, pattern := range nsAlias.Pattern {
+			match, err := filepath.Match(pattern, curName)
+			if err != nil {
+				return nil, fmt.Errorf("invalid namespace alias pattern %q: %w", pattern, err)
+			}
+			if match {
+				return nsAlias.Namespaces, nil
+			}
+		}
 		for _, name := range nsAlias.Configs {
 			if name == curName {
 				return nsAlias.Namespaces, nil

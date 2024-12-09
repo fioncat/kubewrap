@@ -3,7 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
 
+	"github.com/fatih/color"
 	"github.com/fioncat/kubewrap/cmd"
 	"github.com/fioncat/kubewrap/pkg/edit"
 	"github.com/fioncat/kubewrap/pkg/fzf"
@@ -52,6 +54,9 @@ type Options struct {
 
 	configMgr  kubeconfig.Manager
 	historyMgr history.Manager
+
+	cur     *kubeconfig.KubeConfig
+	curName string
 }
 
 func (o *Options) Validate(_ *cobra.Command, args []string) error {
@@ -112,6 +117,11 @@ func (o *Options) prepare(cmdctx cmd.Context) error {
 		return err
 	}
 
+	cur, ok := configMgr.Current()
+	if ok {
+		o.cur = cur
+		o.curName = cur.Name
+	}
 	o.configMgr = configMgr
 	o.historyMgr = histMgr
 
@@ -156,7 +166,7 @@ func (o *Options) selectUse(cmdctx *cmd.Context) (*kubeconfig.KubeConfig, error)
 				return nil, err
 			}
 
-			data, err := edit.Edit(cmdctx.Config)
+			data, err := edit.Edit(cmdctx.Config, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -166,7 +176,7 @@ func (o *Options) selectUse(cmdctx *cmd.Context) (*kubeconfig.KubeConfig, error)
 		return kc, nil
 	}
 
-	return o.selectOne(curName)
+	return o.selectOne()
 }
 
 func (o *Options) handleEdit(cmdctx *cmd.Context) error {
@@ -175,12 +185,27 @@ func (o *Options) handleEdit(cmdctx *cmd.Context) error {
 		return err
 	}
 
-	data, err := edit.Edit(cmdctx.Config)
+	var initData []byte
+	kc, ok := o.configMgr.Get(name)
+	if !ok {
+		err = term.Confirm(o.skipConfirm, "try to edit a new kubeconfig %q, continue", name)
+		if err != nil {
+			return err
+		}
+	} else {
+		path := kc.Path()
+		initData, err = os.ReadFile(path)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	data, err := edit.Edit(cmdctx.Config, initData)
 	if err != nil {
 		return err
 	}
 
-	kc, err := o.configMgr.Put(name, data)
+	kc, err = o.configMgr.Put(name, data)
 	if err != nil {
 		return err
 	}
@@ -198,12 +223,11 @@ func (o *Options) selectEdit() (string, error) {
 		return o.name, nil
 	}
 
-	cur, ok := o.configMgr.Current()
-	if ok {
-		return cur.Name, nil
+	if o.curName != "" {
+		return o.curName, nil
 	}
 
-	kc, err := o.selectOne("")
+	kc, err := o.selectOne()
 	if err != nil {
 		return "", err
 	}
@@ -232,13 +256,7 @@ func (o *Options) selectDelete() (string, error) {
 		return o.name, nil
 	}
 
-	var curName string
-	cur, ok := o.configMgr.Current()
-	if ok {
-		curName = cur.Name
-	}
-
-	kc, err := o.selectOne(curName)
+	kc, err := o.selectOne()
 	if err != nil {
 		return "", err
 	}
@@ -257,7 +275,11 @@ func (o *Options) handleList() error {
 
 	kcs := o.configMgr.List()
 	for _, kc := range kcs {
-		fmt.Println(kc.String())
+		line := kc.String()
+		if o.curName != "" && kc.Name == o.curName {
+			line = color.New(color.Bold).Sprintf("* %s", line)
+		}
+		fmt.Println(line)
 	}
 	return nil
 }
@@ -291,7 +313,7 @@ func (o *Options) handleListHistory() error {
 
 func (o *Options) selectGet() (*kubeconfig.KubeConfig, error) {
 	if o.name == "" {
-		return nil, nil
+		return o.cur, nil
 	}
 	kc, ok := o.configMgr.Get(o.name)
 	if !ok {
@@ -312,13 +334,18 @@ func (o *Options) use(cmdctx *cmd.Context, kc *kubeconfig.KubeConfig) error {
 	return o.historyMgr.Save()
 }
 
-func (o *Options) selectOne(exclude string) (*kubeconfig.KubeConfig, error) {
+func (o *Options) selectOne() (*kubeconfig.KubeConfig, error) {
 	kcs := o.configMgr.List()
-	items := make([]string, 0, len(kcs))
+	filterd := make([]*kubeconfig.KubeConfig, 0, len(kcs))
 	for _, kc := range kcs {
-		if exclude != "" && kc.Name == exclude {
+		if o.curName != "" && kc.Name == o.curName {
 			continue
 		}
+		filterd = append(filterd, kc)
+	}
+
+	items := make([]string, 0, len(filterd))
+	for _, kc := range filterd {
 		items = append(items, kc.Name)
 	}
 
@@ -331,16 +358,15 @@ func (o *Options) selectOne(exclude string) (*kubeconfig.KubeConfig, error) {
 		return nil, err
 	}
 
-	return kcs[idx], nil
+	return filterd[idx], nil
 }
 
 func (o *Options) handleUnuse(cmdctx *cmd.Context) error {
-	cur, ok := o.configMgr.Current()
-	if !ok {
+	if o.curName == "" {
 		return errors.New("no current kubeconfig used, cannot unuse")
 	}
 
-	term.PrintHint("Unuse current kubeconfig %q", cur.Name)
+	term.PrintHint("Unuse current kubeconfig %q", o.curName)
 	src := kubeconfig.UnsetSource()
 	return source.Apply(cmdctx.Config, src)
 }

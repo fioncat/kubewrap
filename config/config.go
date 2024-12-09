@@ -53,6 +53,7 @@ type History struct {
 
 type NamespaceAlias struct {
 	Configs    []string `json:"configs" toml:"configs"`
+	Pattern    []string `json:"pattern" toml:"pattern"`
 	Namespaces []string `json:"namespaces" toml:"namespaces"`
 }
 

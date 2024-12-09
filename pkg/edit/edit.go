@@ -1,16 +1,18 @@
 package edit
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 
 	"github.com/fioncat/kubewrap/config"
 )
 
-func Edit(cfg *config.Config) ([]byte, error) {
-	path, err := createEditFile()
+func Edit(cfg *config.Config, initData []byte) ([]byte, error) {
+	path, err := createEditFile(initData)
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +37,18 @@ func Edit(cfg *config.Config) ([]byte, error) {
 		return nil, fmt.Errorf("remove edit file: %w", err)
 	}
 
+	if reflect.DeepEqual(data, initData) {
+		return nil, errors.New("edit content not changed")
+	}
+
 	return data, nil
 }
 
-func createEditFile() (string, error) {
+func createEditFile(initData []byte) (string, error) {
 	path := filepath.Join(os.TempDir(), "kubewrap_edit.yaml")
-	file, err := os.Create(path)
+	err := os.WriteFile(path, initData, 0644)
 	if err != nil {
-		return "", fmt.Errorf("create edit file: %w", err)
+		return "", fmt.Errorf("write edit file: %w", err)
 	}
-	return path, file.Close()
+	return path, nil
 }
