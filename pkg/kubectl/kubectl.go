@@ -16,11 +16,29 @@ type Kubectl interface {
 
 	Exec(namespace, name string, cmd []string) error
 	Copy(namespace, src, dest string) error
+
+	ListResources(resourceType, namespace string) ([]*Resource, error)
+	ListContainers(r *Resource) ([]*Container, error)
+
+	SetImage(c *Container, image string) error
+	Scale(r *Resource, replicas int) error
+	RolloutRestart(r *Resource) error
 }
 
 type Node struct {
 	Name        string
 	Description string
+}
+
+type Resource struct {
+	Type      string
+	Namespace string
+	Name      string
+}
+
+type Container struct {
+	Resource
+	ContainerName string
 }
 
 type NotFoundError struct {
