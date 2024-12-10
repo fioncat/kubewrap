@@ -164,6 +164,9 @@ func (c *Config) normalize() error {
 		c.History.Path = defaults.History.Path
 	}
 	c.History.Path = os.ExpandEnv(c.History.Path)
+	if !filepath.IsAbs(c.History.Path) {
+		return errors.New("`history.path` is not absolute")
+	}
 
 	if c.History.Max <= 0 {
 		c.History.Max = defaults.History.Max
