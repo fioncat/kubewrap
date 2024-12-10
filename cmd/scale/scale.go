@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/fioncat/kubewrap/cmd"
+	"github.com/fioncat/kubewrap/pkg/term"
 	"github.com/spf13/cobra"
 )
 
@@ -46,5 +47,11 @@ func (o *Options) Run(cmdctx *cmd.Context) error {
 	if err != nil {
 		return err
 	}
-	return cmdctx.Kubectl.Scale(r, o.replicas)
+	err = cmdctx.Kubectl.Scale(r, o.replicas)
+	if err != nil {
+		return err
+	}
+
+	term.PrintHint("Scaled %v to %d", r, o.replicas)
+	return nil
 }

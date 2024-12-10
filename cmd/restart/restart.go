@@ -2,6 +2,7 @@ package restart
 
 import (
 	"github.com/fioncat/kubewrap/cmd"
+	"github.com/fioncat/kubewrap/pkg/term"
 	"github.com/spf13/cobra"
 )
 
@@ -31,5 +32,11 @@ func (o *Options) Run(cmdctx *cmd.Context) error {
 	if err != nil {
 		return err
 	}
-	return cmdctx.Kubectl.RolloutRestart(r)
+	err = cmdctx.Kubectl.RolloutRestart(r)
+	if err != nil {
+		return err
+	}
+
+	term.PrintHint("Restarted %v", r)
+	return nil
 }

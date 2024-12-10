@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/fioncat/kubewrap/cmd"
+	"github.com/fioncat/kubewrap/pkg/term"
 	"github.com/spf13/cobra"
 )
 
@@ -40,5 +41,11 @@ func (o *Options) Run(cmdctx *cmd.Context) error {
 	if err != nil {
 		return err
 	}
-	return cmdctx.Kubectl.SetImage(c, o.image)
+	err = cmdctx.Kubectl.SetImage(c, o.image)
+	if err != nil {
+		return err
+	}
+
+	term.PrintHint("Set image of %v to %q", c, o.image)
+	return nil
 }
