@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/fioncat/kubewrap/config"
 	"github.com/fioncat/kubewrap/pkg/kubeconfig"
@@ -76,6 +77,88 @@ func CompleteNodes(c *cobra.Command) ([]*kubectl.Node, bool) {
 		return nil, false
 	}
 	return nodes, true
+}
+
+var resourceTypeCompletionList = []string{
+	"deploy/", "sts/", "ds/", "job/", "cronjob/",
+}
+
+func CompleteResource(c *cobra.Command, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return completeResource(c, toComplete, false)
+}
+
+func completeResource(c *cobra.Command, toComplete string, fromContainer bool) ([]string, cobra.ShellCompDirective) {
+	fields := strings.Split(toComplete, "/")
+	switch len(fields) {
+	case 0, 1:
+		return resourceTypeCompletionList, cobra.ShellCompDirectiveNoSpace
+
+	case 2:
+		resourceType := fields[0]
+		namespace := getCurrentNamespace()
+		k := getCompleteKubectl(c)
+		if k == nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		rs, err := k.ListResources(resourceType, namespace)
+		if err != nil {
+			WriteCompleteLogs("List resources failed: %v", err)
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		items := make([]string, 0, len(rs))
+		for _, r := range rs {
+			item := fmt.Sprintf("%s/%s", resourceType, r.Name)
+			if fromContainer {
+				item = item + "/"
+			}
+			items = append(items, item)
+		}
+
+		flag := cobra.ShellCompDirectiveNoFileComp
+		if fromContainer {
+			flag = cobra.ShellCompDirectiveNoSpace
+		}
+
+		return items, flag
+	}
+
+	return nil, cobra.ShellCompDirectiveNoFileComp
+}
+
+func CompleteContainer(c *cobra.Command, toComplete string) ([]string, cobra.ShellCompDirective) {
+	fields := strings.Split(toComplete, "/")
+	switch len(fields) {
+	case 0, 1, 2:
+		return completeResource(c, toComplete, true)
+
+	case 3:
+		r := &kubectl.Resource{
+			Type:      fields[0],
+			Namespace: getCurrentNamespace(),
+			Name:      fields[1],
+		}
+		k := getCompleteKubectl(c)
+		if k == nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		cs, err := k.ListContainers(r)
+		if err != nil {
+			WriteCompleteLogs("List containers failed: %v", err)
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		items := make([]string, 0, len(cs))
+		for _, container := range cs {
+			items = append(items, fmt.Sprintf("%s/%s/%s", r.Type, r.Name, container.ContainerName))
+		}
+
+		return items, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	return nil, cobra.ShellCompDirectiveNoFileComp
 }
 
 func SingleNodeCompletionFunc(c *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

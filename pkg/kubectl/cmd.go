@@ -114,6 +114,87 @@ func (k *cmdKubectl) Copy(namespace, src, dest string) error {
 	return err
 }
 
+func (k *cmdKubectl) ListResources(resourceType, namespace string) ([]*Resource, error) {
+	args := []string{
+		"get", "-n", namespace,
+		resourceType,
+		"-o", "jsonpath={.items[*].metadata.name}",
+	}
+	output, err := k.output(nil, args...)
+	if err != nil {
+		return nil, err
+	}
+	names := strings.Fields(output)
+	rs := make([]*Resource, 0, len(names))
+	for _, name := range names {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		rs = append(rs, &Resource{
+			Type:      resourceType,
+			Namespace: namespace,
+			Name:      name,
+		})
+	}
+	return rs, nil
+}
+
+func (k *cmdKubectl) ListContainers(r *Resource) ([]*Container, error) {
+	args := []string{
+		"get", "-n", r.Namespace,
+		r.Type, r.Name,
+		"-o", "jsonpath={.spec.template.spec.containers[*].name}",
+	}
+	output, err := k.output(nil, args...)
+	if err != nil {
+		return nil, err
+	}
+	names := strings.Fields(output)
+	cs := make([]*Container, 0, len(names))
+	for _, name := range names {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		cs = append(cs, &Container{
+			Resource: *r,
+
+			ContainerName: name,
+		})
+	}
+	return cs, nil
+}
+
+func (k *cmdKubectl) SetImage(c *Container, image string) error {
+	args := []string{
+		"set", "image", "-n", c.Namespace,
+		fmt.Sprintf("%s/%s", c.Type, c.Name),
+		fmt.Sprintf("%s=%s", c.ContainerName, image),
+	}
+	_, err := k.output(nil, args...)
+	return err
+}
+
+func (k *cmdKubectl) Scale(r *Resource, replicas int) error {
+	args := []string{
+		"scale", "-n", r.Namespace,
+		fmt.Sprintf("%s/%s", r.Type, r.Name),
+		fmt.Sprintf("--replicas=%d", replicas),
+	}
+	_, err := k.output(nil, args...)
+	return err
+}
+
+func (k *cmdKubectl) RolloutRestart(r *Resource) error {
+	args := []string{
+		"rollout", "restart", "-n", r.Namespace,
+		fmt.Sprintf("%s/%s", r.Type, r.Name),
+	}
+	_, err := k.output(nil, args...)
+	return err
+}
+
 func (k *cmdKubectl) lines(args ...string) ([]string, error) {
 	output, err := k.output(nil, args...)
 	if err != nil {
